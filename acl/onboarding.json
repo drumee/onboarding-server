@@ -1,28 +1,46 @@
 {
   "services": {
     "save_user_info": {
-      "scope": "hub", 
-      "permission": { "src": "write" } 
+      "scope": "hub",
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api" 
+      }
     },
     "save_usage_plan": {
       "scope": "hub",
-      "permission": { "src": "write" }
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api"
+      }
     },
     "save_tools": {
       "scope": "hub",
-      "permission": { "src": "write" }
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api"
+      }
     },
     "save_privacy": {
       "scope": "hub",
-      "permission": { "src": "write" }
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api"
+      }
     },
     "get_response": {
       "scope": "hub",
-      "permission": { "src": "read" } 
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api"
+      }
     },
      "check_completion": {
       "scope": "hub",
-      "permission": { "src": "read" }
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api"
+      }
     }
   },
   "modules": {
