@@ -1,0 +1,32 @@
+{
+  "services": {
+    "save_user_info": {
+      "scope": "hub", 
+      "permission": { "src": "write" } 
+    },
+    "save_usage_plan": {
+      "scope": "hub",
+      "permission": { "src": "write" }
+    },
+    "save_tools": {
+      "scope": "hub",
+      "permission": { "src": "write" }
+    },
+    "save_privacy": {
+      "scope": "hub",
+      "permission": { "src": "write" }
+    },
+    "get_response": {
+      "scope": "hub",
+      "permission": { "src": "read" } 
+    },
+     "check_completion": {
+      "scope": "hub",
+      "permission": { "src": "read" }
+    }
+  },
+  "modules": {
+    "private": "service/onboarding", 
+    "public": "service/onboarding" 
+  }
+}
