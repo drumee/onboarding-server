@@ -1,3 +1,4 @@
+// service/onboarding.js
 const { Entity } = require('@drumee/server-core');
 const { toArray } = require('@drumee/server-essentials');
 
@@ -19,15 +20,24 @@ class Onboarding extends Entity {
       throw new Error("Please complete Step 1 (User Info) first.");
     }
   }
-  
+
   async save_user_info() {
     const userId = this._getUserId();
+
+    // DEBUG: Log user ID
+    console.log('[ONBOARDING DEBUG] userId:', userId);
+    console.log('[ONBOARDING DEBUG] this.user:', this.user);
+    console.log('[ONBOARDING DEBUG] this.session:', this.session);
 
     const firstName = this.input.get('first_name');
     const lastName = this.input.get('last_name');
     const email = this.input.get('email');
     const country = this.input.get('country');
 
+    // DEBUG: Log parameters
+    console.log('[ONBOARDING DEBUG] Parameters:', { userId, firstName, lastName, email, country });
+
+    // Validate
     if (!firstName) throw new Error("First name is required.");
     if (!lastName) throw new Error("Last name is required.");
     if (!email) throw new Error("Email is required.");
@@ -42,6 +52,9 @@ class Onboarding extends Entity {
       country
     );
 
+    // DEBUG: Log result
+    console.log('[ONBOARDING DEBUG] SP result:', result);
+
     result = toArray(result)[0] || {};
 
     this.output.data({ 
@@ -54,12 +67,14 @@ class Onboarding extends Entity {
   async save_usage_plan() {
     const userId = this._getUserId();
     
-    await this._checkStep1Completed(userId);
+    // TEMPORARY: Comment out check for testing
+    // await this._checkStep1Completed(userId);
 
     const usagePlan = this.input.get('usage_plan');
 
     if (!usagePlan) throw new Error("Usage plan is required.");
     
+    // Validate enum values
     const validPlans = ['personal', 'team', 'storage', 'other'];
     if (!validPlans.includes(usagePlan)) {
       throw new Error(`Usage plan must be one of: ${validPlans.join(', ')}`);
@@ -83,6 +98,7 @@ class Onboarding extends Entity {
   async save_tools() {
     const userId = this._getUserId();
     
+    // Check Step 1 completed
     await this._checkStep1Completed(userId);
 
     const currentTools = this.input.get('current_tools');
@@ -121,6 +137,7 @@ class Onboarding extends Entity {
   async save_privacy() {
     const userId = this._getUserId();
     
+    // Check Step 1 completed
     await this._checkStep1Completed(userId);
 
     const privacyLevel = this.input.get('privacy_level');
@@ -129,6 +146,7 @@ class Onboarding extends Entity {
       throw new Error("Privacy level is required.");
     }
 
+    // Validate range 1-5
     const level = parseInt(privacyLevel);
     if (isNaN(level) || level < 1 || level > 5) {
       throw new Error("Privacy level must be between 1 and 5.");
@@ -182,6 +200,7 @@ class Onboarding extends Entity {
     });
   }
 
+
   async check_completion() {
     const userId = this._getUserId();
 
@@ -195,6 +214,19 @@ class Onboarding extends Entity {
     this.output.data({
       success: true,
       data: completionStatus
+    });
+  }
+
+  async mark_complete() {
+    const userId = this._getUserId();
+
+    let result = await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', userId);
+    result = toArray(result)[0] || {};
+
+    this.output.data({
+      success: true,
+      message: 'Onboarding marked as complete!',
+      data: result
     });
   }
 

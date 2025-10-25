@@ -35,11 +35,18 @@
         "fast_check": "public-api"
       }
     },
-     "check_completion": {
+    "check_completion": {
       "scope": "hub",
       "permission": { 
         "src": "anonymous",
         "fast_check": "public-api"
+      }
+    },
+    "mark_complete": {
+      "scope": "hub",
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api" 
       }
     }
   },
