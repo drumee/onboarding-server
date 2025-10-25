@@ -1,3 +1,5 @@
+-- File: onboarding-server/sql/procedures/save_onboarding_usage_plan.sql
+
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `save_onboarding_usage_plan`$$

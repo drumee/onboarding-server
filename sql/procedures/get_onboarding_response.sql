@@ -1,3 +1,5 @@
+-- File: onboarding-server/sql/procedures/get_onboarding_response.sql
+
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `get_onboarding_response`$$

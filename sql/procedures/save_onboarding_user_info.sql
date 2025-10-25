@@ -1,3 +1,6 @@
+-- File: onboarding-server/sql/procedures/save_onboarding_user_info.sql
+-- Version with DEFAULT values for incomplete steps
+
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `save_onboarding_user_info`$$
@@ -44,20 +47,27 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid email format';
     END IF;
     
-    -- Insert or update
+    -- Insert with TEMPORARY DEFAULT VALUES for incomplete steps
+    -- These will be overwritten when user completes those steps
     INSERT INTO onboarding_responses (
         user_id, 
         first_name, 
         last_name, 
         email, 
-        country
+        country,
+        usage_plan,              -- DEFAULT: will be updated in step 2
+        current_tools,           -- DEFAULT: will be updated in step 3
+        privacy_concern_level    -- DEFAULT: will be updated in step 4
     )
     VALUES (
         _user_id,
         _first_name,
         _last_name,
         _email,
-        _country
+        _country,
+        'personal',              -- Temporary default
+        JSON_ARRAY(),            -- Empty JSON array []
+        1                        -- Temporary default (lowest concern)
     )
     ON DUPLICATE KEY UPDATE 
         first_name = VALUES(first_name),
@@ -68,7 +78,7 @@ BEGIN
     
     COMMIT;
     
-    
+    -- Return the record
     SELECT * FROM onboarding_responses WHERE user_id = _user_id;
     
 END$$
