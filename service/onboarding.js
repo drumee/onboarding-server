@@ -147,27 +147,31 @@ class Onboarding extends Entity {
   async get_response() {
     const userId = this._getUserId();
 
-    let responseData = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', userId);
-    responseData = toArray(responseData)[0] || null;
+    let responseDataRaw = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', userId);
+    
+    console.log('[ONBOARDING DEBUG] Raw result from get_response SP:', JSON.stringify(responseDataRaw)); 
+    
+    let responseData = toArray(responseDataRaw)[0] || null; 
 
     if (!responseData) {
-      this.output.data({
-        success: false,
+      this.output.data({ 
+        success: false, 
         message: 'No onboarding data found.',
         data: null
       });
       return;
     }
 
-    if (responseData.current_tools && typeof responseData.current_tools === 'string') {
+    if (responseData.current_tools) {
+      if (typeof responseData.current_tools === 'string') {
         try {
-            responseData.current_tools = JSON.parse(responseData.current_tools);
+          responseData.current_tools = JSON.parse(responseData.current_tools);
         } catch (e) {
-            this.warn("Failed to parse current_tools JSON for user:", userId);
-            responseData.current_tools = [];
+          this.warn("Failed to parse current_tools JSON for user:", userId);
+          responseData.current_tools = [];
         }
+      }
     }
-
 
     this.output.data({
       success: true,
