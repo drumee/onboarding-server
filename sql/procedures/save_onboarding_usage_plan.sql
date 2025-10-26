@@ -40,9 +40,6 @@ BEGIN
     
     COMMIT;
     
-    -- Return the record
-    SELECT * FROM onboarding_responses WHERE user_id = _user_id;
-    
 END$$
 
 DELIMITER ;
