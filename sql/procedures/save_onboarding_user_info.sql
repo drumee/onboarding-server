@@ -1,5 +1,4 @@
 -- File: onboarding-server/sql/procedures/save_onboarding_user_info.sql
--- Version with DEFAULT values for incomplete steps
 
 DELIMITER $$
 
@@ -13,51 +12,36 @@ CREATE PROCEDURE `save_onboarding_user_info`(
     IN _country VARCHAR(100)
 )
 BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-    
-    START TRANSACTION;
-    
-    -- Validate inputs
+    -- Validate inputs 
     IF _user_id IS NULL OR _user_id = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'user_id is required';
     END IF;
-    
     IF _first_name IS NULL OR _first_name = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'first_name is required';
     END IF;
-    
     IF _last_name IS NULL OR _last_name = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'last_name is required';
     END IF;
-    
     IF _email IS NULL OR _email = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'email is required';
     END IF;
-    
     IF _country IS NULL OR _country = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'country is required';
     END IF;
-    
-    -- Basic email validation
     IF _email NOT REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid email format';
     END IF;
-    
-    -- Insert with TEMPORARY DEFAULT VALUES for incomplete steps
-    -- These will be overwritten when user completes those steps
+
+    -- Insert with TEMPORARY DEFAULT VALUES 
     INSERT INTO onboarding_responses (
-        user_id, 
-        first_name, 
-        last_name, 
-        email, 
+        user_id,
+        first_name,
+        last_name,
+        email,
         country,
-        usage_plan,              -- DEFAULT: will be updated in step 2
-        current_tools,           -- DEFAULT: will be updated in step 3
-        privacy_concern_level    -- DEFAULT: will be updated in step 4
+        usage_plan,
+        current_tools,
+        privacy_concern_level
     )
     VALUES (
         _user_id,
@@ -65,19 +49,17 @@ BEGIN
         _last_name,
         _email,
         _country,
-        'personal',              -- Temporary default
-        JSON_ARRAY(),            -- Empty JSON array []
-        1                        -- Temporary default (lowest concern)
+        'personal',
+        JSON_ARRAY(),
+        1
     )
-    ON DUPLICATE KEY UPDATE 
+    ON DUPLICATE KEY UPDATE
         first_name = VALUES(first_name),
         last_name = VALUES(last_name),
         email = VALUES(email),
         country = VALUES(country),
         updated_at = NOW();
-    
-    COMMIT;
-    
+
 END$$
 
 DELIMITER ;
