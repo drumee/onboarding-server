@@ -19,9 +19,6 @@ BEGIN
     IF _privacy_level < 1 OR _privacy_level > 5 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'privacy_level must be between 1 and 5';
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM onboarding_responses WHERE user_id = _user_id) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User info must be saved first (Step 1)';
-    END IF;
 
     UPDATE onboarding_responses
     SET

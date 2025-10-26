@@ -16,9 +16,6 @@ BEGIN
     IF _usage_plan IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'usage_plan is required';
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM onboarding_responses WHERE user_id = _user_id) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User info must be saved first (Step 1)';
-    END IF;
 
     UPDATE onboarding_responses
     SET

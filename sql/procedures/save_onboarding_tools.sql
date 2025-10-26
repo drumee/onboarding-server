@@ -22,9 +22,6 @@ BEGIN
     IF JSON_TYPE(_current_tools_json) != 'ARRAY' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'current_tools must be a JSON array';
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM onboarding_responses WHERE user_id = _user_id) THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User info must be saved first (Step 1)';
-    END IF;
 
     UPDATE onboarding_responses
     SET
