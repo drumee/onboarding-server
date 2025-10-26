@@ -1,4 +1,5 @@
 // service/onboarding.js
+
 const { Entity } = require('@drumee/server-core');
 const { toArray } = require('@drumee/server-essentials');
 
@@ -15,7 +16,7 @@ class Onboarding extends Entity {
   async _checkStep1Completed(userId) {
     let result = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', userId);
     result = toArray(result)[0];
-    
+
     if (!result || !result.first_name || !result.email) {
       throw new Error("Please complete Step 1 (User Info) first.");
     }
@@ -43,74 +44,59 @@ class Onboarding extends Entity {
     if (!email) throw new Error("Email is required.");
     if (!country) throw new Error("Country is required.");
 
-    let result = await this.db.await_proc(
-      '1_c1d86df0c1d86df7.save_onboarding_user_info', 
-      userId, 
-      firstName, 
-      lastName, 
-      email, 
+    // Call SP
+    await this.db.await_proc( 
+      '1_c1d86df0c1d86df7.save_onboarding_user_info',
+      userId,
+      firstName,
+      lastName,
+      email,
       country
     );
 
-    // DEBUG: Log result
-    console.log('[ONBOARDING DEBUG] SP result:', result);
-
-    result = toArray(result)[0] || {};
-
-    this.output.data({ 
-      success: true, 
+    this.output.data({
+      success: true,
       message: 'User info saved.',
-      data: result
+      data: {} 
     });
   }
 
   async save_usage_plan() {
     const userId = this._getUserId();
-    
-    // TEMPORARY: Comment out check for testing
-    // await this._checkStep1Completed(userId);
 
     const usagePlan = this.input.get('usage_plan');
 
     if (!usagePlan) throw new Error("Usage plan is required.");
-    
-    // Validate enum values
+
     const validPlans = ['personal', 'team', 'storage', 'other'];
     if (!validPlans.includes(usagePlan)) {
       throw new Error(`Usage plan must be one of: ${validPlans.join(', ')}`);
     }
 
-    let result = await this.db.await_proc(
-      '1_c1d86df0c1d86df7.save_onboarding_usage_plan', 
-      userId, 
+    await this.db.await_proc(
+      '1_c1d86df0c1d86df7.save_onboarding_usage_plan',
+      userId,
       usagePlan
     );
 
-    result = toArray(result)[0] || {};
-
-    this.output.data({ 
-      success: true, 
+    this.output.data({
+      success: true,
       message: 'Usage plan saved.',
-      data: result
+      data: {} 
     });
   }
 
   async save_tools() {
     const userId = this._getUserId();
-    
-    // Check Step 1 completed
-    await this._checkStep1Completed(userId);
 
     const currentTools = this.input.get('current_tools');
-    
+
     if (!Array.isArray(currentTools)) {
       throw new Error("current_tools must be an array.");
     }
-
     if (currentTools.length === 0) {
       throw new Error("Please select at least one tool.");
     }
-
     const validTools = ['notion', 'dropbox', 'google_drive', 'other'];
     const invalidTools = currentTools.filter(tool => !validTools.includes(tool));
     if (invalidTools.length > 0) {
@@ -119,51 +105,42 @@ class Onboarding extends Entity {
 
     const currentToolsJson = JSON.stringify(currentTools);
 
-    let result = await this.db.await_proc(
-      '1_c1d86df0c1d86df7.save_onboarding_tools', 
-      userId, 
+    await this.db.await_proc( 
+      '1_c1d86df0c1d86df7.save_onboarding_tools',
+      userId,
       currentToolsJson
     );
 
-    result = toArray(result)[0] || {};
-
-    this.output.data({ 
-      success: true, 
+    this.output.data({
+      success: true,
       message: 'Tools saved.',
-      data: result
+      data: {} 
     });
   }
 
   async save_privacy() {
     const userId = this._getUserId();
-    
-    // Check Step 1 completed
-    await this._checkStep1Completed(userId);
 
     const privacyLevel = this.input.get('privacy_level');
 
     if (privacyLevel === null || privacyLevel === undefined) {
       throw new Error("Privacy level is required.");
     }
-
-    // Validate range 1-5
     const level = parseInt(privacyLevel);
     if (isNaN(level) || level < 1 || level > 5) {
       throw new Error("Privacy level must be between 1 and 5.");
     }
 
-    let result = await this.db.await_proc(
-      '1_c1d86df0c1d86df7.save_onboarding_privacy', 
-      userId, 
+    await this.db.await_proc(
+      '1_c1d86df0c1d86df7.save_onboarding_privacy',
+      userId,
       level
     );
 
-    result = toArray(result)[0] || {};
-
-    this.output.data({ 
-      success: true, 
+    this.output.data({
+      success: true,
       message: 'Privacy level saved.',
-      data: result
+      data: {} 
     });
   }
 
@@ -171,28 +148,26 @@ class Onboarding extends Entity {
     const userId = this._getUserId();
 
     let responseData = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', userId);
-    
     responseData = toArray(responseData)[0] || null;
 
     if (!responseData) {
-      this.output.data({ 
-        success: false, 
+      this.output.data({
+        success: false,
         message: 'No onboarding data found.',
         data: null
       });
       return;
     }
 
-    if (responseData.current_tools) {
-      if (typeof responseData.current_tools === 'string') {
+    if (responseData.current_tools && typeof responseData.current_tools === 'string') {
         try {
-          responseData.current_tools = JSON.parse(responseData.current_tools);
+            responseData.current_tools = JSON.parse(responseData.current_tools);
         } catch (e) {
-          this.warn("Failed to parse current_tools JSON for user:", userId);
-          responseData.current_tools = [];
+            this.warn("Failed to parse current_tools JSON for user:", userId);
+            responseData.current_tools = [];
         }
-      }
     }
+
 
     this.output.data({
       success: true,
@@ -205,10 +180,10 @@ class Onboarding extends Entity {
     const userId = this._getUserId();
 
     let completionStatus = await this.db.await_proc('1_c1d86df0c1d86df7.check_onboarding_completion', userId);
-    completionStatus = toArray(completionStatus)[0] || { 
+    completionStatus = toArray(completionStatus)[0] || {
       user_id: userId,
-      is_completed: false, 
-      status: 'not_started' 
+      is_completed: false,
+      status: 'not_started'
     };
 
     this.output.data({
@@ -220,13 +195,12 @@ class Onboarding extends Entity {
   async mark_complete() {
     const userId = this._getUserId();
 
-    let result = await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', userId);
-    result = toArray(result)[0] || {};
+    await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', userId);
 
     this.output.data({
       success: true,
-      message: 'Onboarding marked as complete!',
-      data: result
+      message: 'Onboarding marked as complete (validated).',
+      data: {}
     });
   }
 
