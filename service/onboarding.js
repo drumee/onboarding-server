@@ -1,213 +1,167 @@
 // service/onboarding.js
 
 const { Entity } = require('@drumee/server-core');
-const { toArray } = require('@drumee/server-essentials');
+const { toArray, Cache } = require('@drumee/server-essentials');
 
 class Onboarding extends Entity {
 
-  _getUserId() {
-    const userId = this.user?.id || this.session?.user?.id;
-    if (!userId) {
-      throw new Error("User ID not found in session.");
-    }
-    return userId;
+  initialize(opt) {
+    super.initialize(opt);
+    this.conf = Cache.getSysConf('ob_conf');
+    console.log("Onboarding Service Initialized. Config:", this.conf);
   }
 
-  async _checkStep1Completed(userId) {
-    let result = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', userId);
-    result = toArray(result)[0];
-
-    if (!result || !result.first_name || !result.email) {
-      throw new Error("Please complete Step 1 (User Info) first.");
+  // Session ID
+  _getSessionId() {
+    const sessionId = this.session?.id || this.input?.sessionId || this.req?.session?.id;
+    if (!sessionId) {
+      console.error('[ONBOARDING ERROR] Session ID not found. Context:', { user: this.user, session: this.session, input: this.input });
+      throw new Error("Session ID not found.");
     }
+    return sessionId;
   }
 
   async save_user_info() {
-    const userId = this._getUserId();
-
-    // DEBUG: Log user ID
-    console.log('[ONBOARDING DEBUG] userId:', userId);
-    console.log('[ONBOARDING DEBUG] this.user:', this.user);
-    console.log('[ONBOARDING DEBUG] this.session:', this.session);
-
+    const sessionId = this._getSessionId();
     const firstName = this.input.get('first_name');
     const lastName = this.input.get('last_name');
     const email = this.input.get('email');
-    const country = this.input.get('country');
+    const countryCode = this.input.get('country_code');
 
-    // DEBUG: Log parameters
-    console.log('[ONBOARDING DEBUG] Parameters:', { userId, firstName, lastName, email, country });
-
-    // Validate
-    if (!firstName) throw new Error("First name is required.");
-    if (!lastName) throw new Error("Last name is required.");
-    if (!email) throw new Error("Email is required.");
-    if (!country) throw new Error("Country is required.");
+    // Basic Validation
+    if (!firstName || !lastName || !email || !countryCode) {
+        throw new Error("Missing required user info fields.");
+    }
 
     // Call SP
-    await this.db.await_proc( 
+    await this.db.await_proc(
       '1_c1d86df0c1d86df7.save_onboarding_user_info',
-      userId,
-      firstName,
-      lastName,
-      email,
-      country
+      sessionId, firstName, lastName, email, countryCode
     );
 
-    this.output.data({
-      success: true,
-      message: 'User info saved.',
-      data: {} 
-    });
+    this.output.data({ success: true, message: 'User info saved.', data: {} });
   }
 
   async save_usage_plan() {
-    const userId = this._getUserId();
-
+    const sessionId = this._getSessionId();
     const usagePlan = this.input.get('usage_plan');
 
     if (!usagePlan) throw new Error("Usage plan is required.");
-
     const validPlans = ['personal', 'team', 'storage', 'other'];
     if (!validPlans.includes(usagePlan)) {
       throw new Error(`Usage plan must be one of: ${validPlans.join(', ')}`);
     }
 
+    // Call SP
     await this.db.await_proc(
       '1_c1d86df0c1d86df7.save_onboarding_usage_plan',
-      userId,
-      usagePlan
+      sessionId, usagePlan
     );
 
-    this.output.data({
-      success: true,
-      message: 'Usage plan saved.',
-      data: {} 
-    });
+    this.output.data({ success: true, message: 'Usage plan saved.', data: {} });
   }
 
   async save_tools() {
-    const userId = this._getUserId();
-
+    const sessionId = this._getSessionId();
     const currentTools = this.input.get('current_tools');
 
-    if (!Array.isArray(currentTools)) {
-      throw new Error("current_tools must be an array.");
-    }
-    if (currentTools.length === 0) {
-      throw new Error("Please select at least one tool.");
-    }
-    const validTools = ['notion', 'dropbox', 'google_drive', 'other'];
-    const invalidTools = currentTools.filter(tool => !validTools.includes(tool));
-    if (invalidTools.length > 0) {
-      throw new Error(`Invalid tools: ${invalidTools.join(', ')}`);
-    }
+    if (!Array.isArray(currentTools)) throw new Error("current_tools must be an array.");
+    if (currentTools.length === 0) throw new Error("Please select at least one tool.");
+    // Add validation for tool names if needed
 
     const currentToolsJson = JSON.stringify(currentTools);
 
-    await this.db.await_proc( 
+    // Call SP
+    await this.db.await_proc(
       '1_c1d86df0c1d86df7.save_onboarding_tools',
-      userId,
-      currentToolsJson
+      sessionId, currentToolsJson
     );
 
-    this.output.data({
-      success: true,
-      message: 'Tools saved.',
-      data: {} 
-    });
+    this.output.data({ success: true, message: 'Tools saved.', data: {} });
   }
 
   async save_privacy() {
-    const userId = this._getUserId();
-
+    const sessionId = this._getSessionId();
     const privacyLevel = this.input.get('privacy_level');
 
-    if (privacyLevel === null || privacyLevel === undefined) {
-      throw new Error("Privacy level is required.");
-    }
+    if (privacyLevel === null || privacyLevel === undefined) throw new Error("Privacy level is required.");
     const level = parseInt(privacyLevel);
-    if (isNaN(level) || level < 1 || level > 5) {
-      throw new Error("Privacy level must be between 1 and 5.");
-    }
+    if (isNaN(level) || level < 1 || level > 5) throw new Error("Privacy level must be between 1 and 5.");
 
+    // Call SP
     await this.db.await_proc(
       '1_c1d86df0c1d86df7.save_onboarding_privacy',
-      userId,
-      level
+      sessionId, level
     );
 
-    this.output.data({
-      success: true,
-      message: 'Privacy level saved.',
-      data: {} 
-    });
+    this.output.data({ success: true, message: 'Privacy level saved.', data: {} });
   }
 
   async get_response() {
-    const userId = this._getUserId();
+    const sessionId = this._getSessionId();
+    let responseDataRaw;
 
-    let responseDataRaw = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', userId);
-    
-    console.log('[ONBOARDING DEBUG] Raw result from get_response SP:', JSON.stringify(responseDataRaw)); 
-    
-    let responseData = toArray(responseDataRaw)[0] || null; 
+    try {
+      responseDataRaw = await this.db.await_proc('1_c1d86df0c1d86df7.get_onboarding_response', sessionId);
+    } catch (spError) {
+       console.error(`[ONBOARDING ERROR] Error calling get_response SP for session ${sessionId}: ${spError.message}`);
+       throw spError; 
+    }
+
+    let responseData = toArray(responseDataRaw)[0] || null;
 
     if (!responseData) {
-      this.output.data({ 
-        success: false, 
-        message: 'No onboarding data found.',
-        data: null
-      });
+      this.output.data({ success: false, message: 'No onboarding data found.', data: null });
       return;
     }
 
-    if (responseData.current_tools) {
-      if (typeof responseData.current_tools === 'string') {
+    // Parse JSON tools
+    if (responseData.current_tools && typeof responseData.current_tools === 'string') {
         try {
-          responseData.current_tools = JSON.parse(responseData.current_tools);
+            responseData.current_tools = JSON.parse(responseData.current_tools);
         } catch (e) {
-          this.warn("Failed to parse current_tools JSON for user:", userId);
-          responseData.current_tools = [];
+            this.warn("Failed to parse current_tools JSON for session:", sessionId);
+            responseData.current_tools = [];
         }
-      }
     }
 
-    this.output.data({
-      success: true,
-      data: responseData
-    });
+    this.output.data({ success: true, data: responseData });
   }
 
-
   async check_completion() {
-    const userId = this._getUserId();
+    const sessionId = this._getSessionId();
+    let completionStatusRaw;
 
-    let completionStatus = await this.db.await_proc('1_c1d86df0c1d86df7.check_onboarding_completion', userId);
-    completionStatus = toArray(completionStatus)[0] || {
-      user_id: userId,
+    try {
+        completionStatusRaw = await this.db.await_proc('1_c1d86df0c1d86df7.check_onboarding_completion', sessionId);
+    } catch (spError) {
+        console.error(`[ONBOARDING ERROR] Error calling check_completion SP for session ${sessionId}: ${spError.message}`);
+        throw spError;
+    }
+
+    let completionStatus = toArray(completionStatusRaw)[0] || {
+      // Return a default structure if SP returns nothing (user not started)
+      session_id: sessionId,
       is_completed: false,
-      status: 'not_started'
+      status: 'not_started',
+      steps_completed: null // Match SP output when not started
     };
 
-    this.output.data({
-      success: true,
-      data: completionStatus
-    });
+    this.output.data({ success: true, data: completionStatus });
   }
 
   async mark_complete() {
-    const userId = this._getUserId();
+    const sessionId = this._getSessionId();
 
-    await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', userId);
+    try {
+        await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', sessionId);
+    } catch (spError) {
+        console.error(`[ONBOARDING ERROR] Error calling mark_complete SP for session ${sessionId}: ${spError.message}`);
+        throw spError; // Let API fail if validation in SP fails
+    }
 
-    this.output.data({
-      success: true,
-      message: 'Onboarding marked as complete (validated).',
-      data: {}
-    });
+    this.output.data({ success: true, message: 'Onboarding marked as complete (validated).', data: {} });
   }
-
 }
 
 module.exports = Onboarding;
