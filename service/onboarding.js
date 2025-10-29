@@ -21,6 +21,11 @@ class Onboarding extends Entity {
     return sessionId;
   }
 
+  async get_env() {
+    console.log("[ONBOARDING] get_env called. Returning config:", this.conf); 
+    this.output.data(this.conf || {}); 
+  }
+
   async save_user_info() {
     const sessionId = this._getSessionId();
     const firstName = this.input.get('first_name');
@@ -40,6 +45,28 @@ class Onboarding extends Entity {
     );
 
     this.output.data({ success: true, message: 'User info saved.', data: {} });
+  }
+
+  async get_countries() {
+    const requestedLocale = this.input.get('locale_code') || this.session?.locale || 'en_US'; 
+
+    let countriesListRaw;
+    try {
+        countriesListRaw = await this.db.await_proc(
+            '1_c1d86df0c1d86df7.get_countries', 
+            requestedLocale 
+        );
+    } catch (spError) {
+        console.error(`[ONBOARDING ERROR] Error calling get_countries SP: ${spError.message}`);
+        throw spError;
+    }
+
+    const countriesList = toArray(countriesListRaw);
+
+    this.output.data({ 
+      success: true,
+      data: countriesList 
+    });
   }
 
   async save_usage_plan() {
