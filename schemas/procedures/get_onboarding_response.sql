@@ -1,34 +1,34 @@
--- File: onboarding-server/sql/procedures/get_onboarding_response.sql
+-- File: onboarding-server/schemas/procedures/get_onboarding_response.sql
+
+DROP PROCEDURE IF EXISTS `get_onboarding_response`;
 
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS `get_onboarding_response`$$
-
 CREATE PROCEDURE `get_onboarding_response`(
-    IN _user_id VARCHAR(16)
+    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
 )
 BEGIN
     -- Validate input
-    IF _user_id IS NULL OR _user_id = '' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'user_id is required';
+    IF _session_id IS NULL OR _session_id = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'session_id is required';
     END IF;
-    
+
     -- Get onboarding response
-    SELECT 
+    SELECT
         id,
-        user_id,
+        session_id, 
         first_name,
         last_name,
         email,
-        country,
+        country_code, 
         usage_plan,
         current_tools,
         privacy_concern_level,
         created_at,
         updated_at
-    FROM onboarding_responses 
-    WHERE user_id = _user_id;
-    
+    FROM onboarding_responses
+    WHERE session_id = _session_id; 
+
 END$$
 
 DELIMITER ;

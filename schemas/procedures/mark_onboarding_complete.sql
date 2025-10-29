@@ -1,62 +1,74 @@
--- File: onboarding-server/sql/procedures/mark_onboarding_complete.sql
--- Validates and marks onboarding as complete
+-- File: onboarding-server/shcemas/procedures/mark_onboarding_complete.sql
+
+DROP PROCEDURE IF EXISTS `mark_onboarding_complete`;
 
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS `mark_onboarding_complete`$$
-
 CREATE PROCEDURE `mark_onboarding_complete`(
-    IN _user_id VARCHAR(16)
+    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
 )
 BEGIN
-    DECLARE v_usage_plan VARCHAR(20);
-    DECLARE v_tools_count INT;
-    DECLARE v_privacy INT;
-    
+    -- Added semicolons
+    DECLARE v_first_name VARCHAR(128);
+    DECLARE v_last_name VARCHAR(128);
+    DECLARE v_email VARCHAR(255);
+    DECLARE v_country_code CHAR(2); 
+    DECLARE v_usage_plan VARCHAR(20); 
+    DECLARE v_current_tools JSON;     
+    DECLARE v_tools_count INT;       
+    DECLARE v_privacy INT;           
+
     -- Validate input
-    IF _user_id IS NULL OR _user_id = '' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'user_id is required';
+    IF _session_id IS NULL OR _session_id = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'session_id is required';
     END IF;
-    
+
     -- Check if record exists
-    IF NOT EXISTS (SELECT 1 FROM onboarding_responses WHERE user_id = _user_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM onboarding_responses WHERE session_id = _session_id) THEN 
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User onboarding not found. Please start from Step 1.';
     END IF;
-    
+
     -- Get current values
-    SELECT usage_plan, JSON_LENGTH(current_tools), privacy_concern_level
-    INTO v_usage_plan, v_tools_count, v_privacy
+    SELECT
+        first_name, last_name, email, country_code, 
+        usage_plan, current_tools, JSON_LENGTH(current_tools), privacy_concern_level
+    INTO
+        v_first_name, v_last_name, v_email, v_country_code, 
+        v_usage_plan, v_current_tools, v_tools_count, v_privacy
     FROM onboarding_responses
-    WHERE user_id = _user_id;
-    
-    -- Validate: Check if user actually filled in data (not using defaults)
-    -- Default usage_plan is 'personal', so we check if tools array is empty
-    IF v_tools_count = 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Please complete Step 3: Select at least one tool.';
+    WHERE session_id = _session_id; 
+    -- Validate: Check if user actually filled in data
+    IF v_first_name IS NULL OR v_last_name IS NULL OR v_email IS NULL OR v_country_code IS NULL THEN 
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Step 1 is incomplete.';
     END IF;
-    
-    -- Optionally check privacy level was explicitly set (not just default 1)
-    -- For now we'll accept any value since 1 is a valid choice
-    
-    -- Mark as complete by adding a completion timestamp or flag
-    -- For now, we just return success if validations pass
-    
-    SELECT 
-        user_id,
+    IF v_usage_plan IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Step 2 (Usage Plan) is incomplete.';
+    END IF;
+    -- Check current_tools is not the default empty array '[]'
+    IF v_current_tools IS NULL OR v_tools_count = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Step 3 (Tools) is incomplete or empty.';
+    END IF;
+    IF v_privacy IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Step 4 (Privacy) is incomplete.';
+    END IF;
+
+    -- If all validations pass, return the complete record
+    SELECT
+        session_id,
         TRUE as is_completed,
         'completed' as status,
         first_name,
         last_name,
         email,
-        country,
+        country_code,
         usage_plan,
         current_tools,
         privacy_concern_level,
         created_at,
         updated_at
     FROM onboarding_responses
-    WHERE user_id = _user_id;
-    
+    WHERE session_id = _session_id; 
+
 END$$
 
 DELIMITER ;
