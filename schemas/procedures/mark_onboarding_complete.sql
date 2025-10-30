@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `mark_onboarding_complete`;
 DELIMITER $$
 
 CREATE PROCEDURE `mark_onboarding_complete`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
+    IN _session_id VARCHAR(128) CHARACTER SET ascii
 )
 BEGIN
     -- Added semicolons

@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `save_onboarding_privacy`;
 DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_privacy`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci,
+    IN _session_id VARCHAR(128) CHARACTER SET ascii,
     IN _privacy_level TINYINT UNSIGNED
 )
 BEGIN

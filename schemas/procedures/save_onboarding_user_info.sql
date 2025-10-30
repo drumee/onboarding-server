@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `save_onboarding_user_info`;
 DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_user_info`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci,
+    IN _session_id VARCHAR(128) CHARACTER SET ascii,
     IN _first_name VARCHAR(128),
     IN _last_name VARCHAR(128),
     IN _email VARCHAR(255),

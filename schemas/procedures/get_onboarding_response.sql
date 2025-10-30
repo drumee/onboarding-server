@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `get_onboarding_response`;
 DELIMITER $$
 
 CREATE PROCEDURE `get_onboarding_response`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
+    IN _session_id VARCHAR(128) CHARACTER SET ascii
 )
 BEGIN
     -- Validate input

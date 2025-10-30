@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `save_onboarding_tools`;
 DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_tools`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci,
+    IN _session_id VARCHAR(128) CHARACTER SET ascii,
     IN _current_tools_json TEXT
 )
 BEGIN

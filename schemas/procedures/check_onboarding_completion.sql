@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `check_onboarding_completion`;
 DELIMITER $$
 
 CREATE PROCEDURE `check_onboarding_completion`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
+    IN _session_id VARCHAR(128) CHARACTER SET ascii
 )
 BEGIN
     DECLARE v_exists BOOLEAN DEFAULT FALSE;
