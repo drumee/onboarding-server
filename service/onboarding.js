@@ -27,7 +27,7 @@ class Onboarding extends Entity {
   }
 
   async save_user_info() {
-    const sessionId = this._getSessionId();
+    const sessionId = this.input.sid();
     const firstName = this.input.get('first_name');
     const lastName = this.input.get('last_name');
     const email = this.input.get('email');
@@ -70,7 +70,7 @@ class Onboarding extends Entity {
   }
 
   async save_usage_plan() {
-    const sessionId = this._getSessionId();
+    const sessionId = this.input.sid();
     const usagePlan = this.input.get('usage_plan');
 
     if (!usagePlan) throw new Error("Usage plan is required.");
@@ -89,7 +89,7 @@ class Onboarding extends Entity {
   }
 
   async save_tools() {
-    const sessionId = this._getSessionId();
+    const sessionId = this.input.sid();
     const currentTools = this.input.get('current_tools');
 
     if (!Array.isArray(currentTools)) throw new Error("current_tools must be an array.");
@@ -108,7 +108,7 @@ class Onboarding extends Entity {
   }
 
   async save_privacy() {
-    const sessionId = this._getSessionId();
+    const sessionId = this.input.sid();
     const privacyLevel = this.input.get('privacy_level');
 
     if (privacyLevel === null || privacyLevel === undefined) throw new Error("Privacy level is required.");
@@ -124,8 +124,43 @@ class Onboarding extends Entity {
     this.output.data({ success: true, message: 'Privacy level saved.', data: {} });
   }
 
+  async check_completion() {
+    const sessionId = this.input.sid();
+    let completionStatusRaw;
+
+    try {
+        completionStatusRaw = await this.db.await_proc('1_c1d86df0c1d86df7.check_onboarding_completion', sessionId);
+    } catch (spError) {
+        console.error(`[ONBOARDING ERROR] Error calling check_completion SP for session ${sessionId}: ${spError.message}`);
+        throw spError;
+    }
+
+    let completionStatus = toArray(completionStatusRaw)[0] || {
+      // Return a default structure if SP returns nothing (user not started)
+      session_id: sessionId,
+      is_completed: false,
+      status: 'not_started',
+      steps_completed: null // Match SP output when not started
+    };
+
+    this.output.data({ success: true, data: completionStatus });
+  }
+
+  async mark_complete() {
+    const sessionId = this.input.sid();
+
+    try {
+        await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', sessionId);
+    } catch (spError) {
+        console.error(`[ONBOARDING ERROR] Error calling mark_complete SP for session ${sessionId}: ${spError.message}`);
+        throw spError; // Let API fail if validation in SP fails
+    }
+
+    this.output.data({ success: true, message: 'Onboarding marked as complete (validated).', data: {} });
+  }
+
   async get_response() {
-    const sessionId = this._getSessionId();
+    const sessionId = this.input.sid();
     let responseDataRaw;
 
     try {
@@ -153,41 +188,6 @@ class Onboarding extends Entity {
     }
 
     this.output.data({ success: true, data: responseData });
-  }
-
-  async check_completion() {
-    const sessionId = this._getSessionId();
-    let completionStatusRaw;
-
-    try {
-        completionStatusRaw = await this.db.await_proc('1_c1d86df0c1d86df7.check_onboarding_completion', sessionId);
-    } catch (spError) {
-        console.error(`[ONBOARDING ERROR] Error calling check_completion SP for session ${sessionId}: ${spError.message}`);
-        throw spError;
-    }
-
-    let completionStatus = toArray(completionStatusRaw)[0] || {
-      // Return a default structure if SP returns nothing (user not started)
-      session_id: sessionId,
-      is_completed: false,
-      status: 'not_started',
-      steps_completed: null // Match SP output when not started
-    };
-
-    this.output.data({ success: true, data: completionStatus });
-  }
-
-  async mark_complete() {
-    const sessionId = this._getSessionId();
-
-    try {
-        await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', sessionId);
-    } catch (spError) {
-        console.error(`[ONBOARDING ERROR] Error calling mark_complete SP for session ${sessionId}: ${spError.message}`);
-        throw spError; // Let API fail if validation in SP fails
-    }
-
-    this.output.data({ success: true, message: 'Onboarding marked as complete (validated).', data: {} });
   }
 }
 
