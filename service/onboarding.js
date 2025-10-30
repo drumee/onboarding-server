@@ -13,9 +13,9 @@ class Onboarding extends Entity {
 
   // Session ID
   _getSessionId() {
-    const sessionId = this.session?.id || this.input?.sessionId || this.req?.session?.id;
+    const sessionId = this.input.sid(); 
     if (!sessionId) {
-      console.error('[ONBOARDING ERROR] Session ID not found. Context:', { user: this.user, session: this.session, input: this.input });
+      console.error('[ONBOARDING ERROR] this.input.sid() returned null or undefined.');
       throw new Error("Session ID not found.");
     }
     return sessionId;
