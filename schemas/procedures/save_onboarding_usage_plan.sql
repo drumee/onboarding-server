@@ -1,28 +1,28 @@
--- File: onboarding-server/sql/procedures/save_onboarding_usage_plan.sql
+-- File: onboarding-server/schemas/procedures/save_onboarding_usage_plan.sql
+
+DROP PROCEDURE IF EXISTS `save_onboarding_usage_plan`;
 
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS `save_onboarding_usage_plan`$$
-
 CREATE PROCEDURE `save_onboarding_usage_plan`(
-    IN _user_id VARCHAR(16),
-    IN _usage_plan ENUM('personal', 'team', 'storage', 'other')
+    IN _session_id VARCHAR(128) CHARACTER SET ascii,
+    IN _usage_plan JSON
 )
 BEGIN
     -- Validate inputs
-    IF _user_id IS NULL OR _user_id = '' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'user_id is required';
+    IF _session_id IS NULL OR _session_id = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'session_id is required';
     END IF;
     IF _usage_plan IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'usage_plan is required';
     END IF;
 
+    -- Update usage plan (WHERE clause ensures record exists)
     UPDATE onboarding_responses
     SET
         usage_plan = _usage_plan,
-        updated_at = NOW()
-    WHERE user_id = _user_id;
-
+        mtime = UNIX_TIMESTAMP()
+    WHERE session_id = _session_id; 
 
 END$$
 
