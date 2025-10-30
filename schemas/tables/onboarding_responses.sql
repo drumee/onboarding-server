@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS onboarding_responses;
 
 CREATE TABLE IF NOT EXISTS onboarding_responses (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    session_id VARCHAR(128) NOT NULL COMMENT 'Unique session identifier',
+    session_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL COMMENT 'Unique session identifier',
 
     -- Step 1 Data (REQUIRED)
     first_name VARCHAR(128) NOT NULL,
