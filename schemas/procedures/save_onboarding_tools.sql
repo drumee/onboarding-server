@@ -6,7 +6,7 @@ DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_tools`(
     IN _session_id VARCHAR(128) CHARACTER SET ascii,
-    IN _current_tools_json TEXT
+    IN _current_tools_json TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
     -- Validate inputs
@@ -22,7 +22,6 @@ BEGIN
     IF JSON_TYPE(_current_tools_json) != 'ARRAY' THEN 
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'current_tools must be a JSON array'; 
     END IF;
-    -- IF JSON_LENGTH(_current_tools_json) = 0 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'current_tools array cannot be empty for this step'; END IF;
 
     -- Update current tools
     UPDATE onboarding_responses

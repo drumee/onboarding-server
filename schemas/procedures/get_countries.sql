@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `get_countries`;
 DELIMITER $$
 
 CREATE PROCEDURE `get_countries`(
-    IN _locale_code VARCHAR(10) 
+    IN _locale_code VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
     IF _locale_code IS NULL OR _locale_code = '' THEN
