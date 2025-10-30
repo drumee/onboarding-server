@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `get_onboarding_response`;
 DELIMITER $$
 
 CREATE PROCEDURE `get_onboarding_response`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
+    IN _session_id VARCHAR(128) CHARACTER SET ascii
 )
 BEGIN
     -- Validate input
@@ -17,15 +17,18 @@ BEGIN
     SELECT
         id,
         session_id, 
-        first_name,
-        last_name,
+        firstname,
+        lastname,
         email,
         country_code, 
         usage_plan,
+        usage_plan plan,
         current_tools,
+        current_tools tools,
         privacy_concern_level,
-        created_at,
-        updated_at
+        privacy_concern_level privacy,
+        ctime,
+        mtime
     FROM onboarding_responses
     WHERE session_id = _session_id; 
 

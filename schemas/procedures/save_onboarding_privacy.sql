@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `save_onboarding_privacy`;
 DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_privacy`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci,
+    IN _session_id VARCHAR(128) CHARACTER SET ascii,
     IN _privacy_level TINYINT UNSIGNED
 )
 BEGIN
@@ -24,7 +24,7 @@ BEGIN
     UPDATE onboarding_responses
     SET
         privacy_concern_level = _privacy_level,
-        updated_at = NOW()
+        mtime = UNIX_TIMESTAMP()
     WHERE session_id = _session_id;
 
 END$$

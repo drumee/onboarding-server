@@ -5,12 +5,12 @@ DROP PROCEDURE IF EXISTS `mark_onboarding_complete`;
 DELIMITER $$
 
 CREATE PROCEDURE `mark_onboarding_complete`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
+    IN _session_id VARCHAR(128) CHARACTER SET ascii
 )
 BEGIN
     -- Added semicolons
-    DECLARE v_first_name VARCHAR(128);
-    DECLARE v_last_name VARCHAR(128);
+    DECLARE v_firstname VARCHAR(128);
+    DECLARE v_lastname VARCHAR(128);
     DECLARE v_email VARCHAR(255);
     DECLARE v_country_code CHAR(2); 
     DECLARE v_usage_plan VARCHAR(20); 
@@ -30,15 +30,15 @@ BEGIN
 
     -- Get current values
     SELECT
-        first_name, last_name, email, country_code, 
+        firstname, lastname, email, country_code, 
         usage_plan, current_tools, JSON_LENGTH(current_tools), privacy_concern_level
     INTO
-        v_first_name, v_last_name, v_email, v_country_code, 
+        v_firstname, v_lastname, v_email, v_country_code, 
         v_usage_plan, v_current_tools, v_tools_count, v_privacy
     FROM onboarding_responses
     WHERE session_id = _session_id; 
     -- Validate: Check if user actually filled in data
-    IF v_first_name IS NULL OR v_last_name IS NULL OR v_email IS NULL OR v_country_code IS NULL THEN 
+    IF v_firstname IS NULL OR v_lastname IS NULL OR v_email IS NULL OR v_country_code IS NULL THEN 
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Step 1 is incomplete.';
     END IF;
     IF v_usage_plan IS NULL THEN
@@ -57,15 +57,15 @@ BEGIN
         session_id,
         TRUE as is_completed,
         'completed' as status,
-        first_name,
-        last_name,
+        firstname,
+        lastname,
         email,
         country_code,
         usage_plan,
         current_tools,
         privacy_concern_level,
-        created_at,
-        updated_at
+        ctime,
+        mtime
     FROM onboarding_responses
     WHERE session_id = _session_id; 
 

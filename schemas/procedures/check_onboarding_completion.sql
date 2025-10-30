@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS `check_onboarding_completion`;
 DELIMITER $$
 
 CREATE PROCEDURE `check_onboarding_completion`(
-    IN _session_id VARCHAR(128) COLLATE utf8mb4_unicode_ci
+    IN _session_id VARCHAR(128) CHARACTER SET ascii
 )
 BEGIN
     DECLARE v_exists BOOLEAN DEFAULT FALSE;
@@ -52,7 +52,7 @@ BEGIN
                 ELSE 'incomplete'
             END as status,
             JSON_OBJECT(
-                'step1_user_info', (SELECT first_name IS NOT NULL FROM onboarding_responses WHERE session_id = _session_id), 
+                'step1_user_info', (SELECT firstname IS NOT NULL FROM onboarding_responses WHERE session_id = _session_id), 
                 'step2_usage_plan', (v_usage_plan IS NOT NULL),
                 'step3_tools', (v_tools_count > 0),
                 'step4_privacy', (v_privacy IS NOT NULL)
