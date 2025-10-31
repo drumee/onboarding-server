@@ -56,6 +56,13 @@
         "fast_check": "public-api" 
       }
     },
+    "reset": {            
+      "scope": "hub",             
+      "permission": {
+        "src": "anonymous",      
+        "fast_check": "public-api" 
+      }
+    },
     "get_env": {                  
       "scope": "hub",             
       "permission": {

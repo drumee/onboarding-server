@@ -24,7 +24,7 @@ BEGIN
     UPDATE onboarding_responses
     SET
         privacy_concern_level = _privacy_level,
-        updated_at = NOW()
+        mtime = UNIX_TIMESTAMP()
     WHERE session_id = _session_id;
 
 END$$

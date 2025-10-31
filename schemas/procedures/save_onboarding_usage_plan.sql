@@ -6,7 +6,7 @@ DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_usage_plan`(
     IN _session_id VARCHAR(128) CHARACTER SET ascii,
-    IN _usage_plan ENUM('personal', 'team', 'storage', 'other')
+    IN _usage_plan JSON
 )
 BEGIN
     -- Validate inputs
@@ -21,7 +21,7 @@ BEGIN
     UPDATE onboarding_responses
     SET
         usage_plan = _usage_plan,
-        updated_at = NOW()
+        mtime = UNIX_TIMESTAMP()
     WHERE session_id = _session_id; 
 
 END$$

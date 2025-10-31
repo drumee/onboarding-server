@@ -7,22 +7,12 @@ CREATE PROCEDURE `get_countries`(
     IN _locale_code VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
-    IF _locale_code IS NULL OR _locale_code = '' THEN
-        SELECT 
-            country_code, 
-            locale_code, 
-            locale_name 
-        FROM countries
-        ORDER BY locale_name ASC; 
-    ELSE
-        SELECT 
-            country_code, 
-            locale_code, 
-            locale_name 
-        FROM countries
-        WHERE locale_code = _locale_code
-        ORDER BY locale_name ASC;
-    END IF;
+  SELECT 
+    country_code, 
+    locale_code, 
+    locale_name 
+  FROM countries
+  ORDER BY locale_name ASC; 
 END$$
 
 DELIMITER ;

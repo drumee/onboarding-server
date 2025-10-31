@@ -7,13 +7,13 @@ CREATE TABLE IF NOT EXISTS onboarding_responses (
     session_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL COMMENT 'Unique session identifier',
 
     -- Step 1 Data (REQUIRED)
-    first_name VARCHAR(128) NOT NULL,
-    last_name VARCHAR(128) NOT NULL,
+    firstname VARCHAR(128) NOT NULL,
+    lastname VARCHAR(128) NOT NULL,
     email VARCHAR(255) NOT NULL,
     country_code CHAR(2) NOT NULL COMMENT 'Corresponds to countries.country_code',
 
     -- Step 2 Data (REQUIRED)
-    usage_plan ENUM('personal', 'team', 'storage', 'other') NOT NULL
+    usage_plan JSON NOT NULL
         COMMENT 'How user plans to use Drumee',
 
     -- Step 3 Data (REQUIRED)
@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS onboarding_responses (
         COMMENT 'Scale: 1 (Not much) to 5 (Extremely important)',
 
     -- Metadata
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    ctime INT(11) UNSIGNED,
+    mtime INT(11) UNSIGNED,
 
     -- Indexes
     INDEX idx_session_id (session_id),
