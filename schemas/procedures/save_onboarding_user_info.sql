@@ -1,27 +1,28 @@
+-- File: onboarding-server/schemas/procedures/save_onboarding_user_info.sql
+
 DROP PROCEDURE IF EXISTS `save_onboarding_user_info`;
 
 DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_user_info`(
     IN _session_id VARCHAR(128) CHARACTER SET ascii,
-    IN _firstname VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    IN _lastname VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+    IN _first_name VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+    IN _last_name VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     IN _email VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     IN _country_code CHAR(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
-    -- (Giữ nguyên phần validation)
     
     IF _session_id IS NULL OR _session_id = '' THEN 
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'session_id is required'; 
     END IF;
     
-    IF _firstname IS NULL OR _firstname = '' THEN 
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'firstname is required'; 
+    IF _first_name IS NULL OR _first_name = '' THEN 
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'first_name is required'; 
     END IF;
     
-    IF _lastname IS NULL OR _lastname = '' THEN 
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'lastname is required'; 
+    IF _last_name IS NULL OR _last_name = '' THEN 
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'last_name is required'; 
     END IF;
     
     IF _email IS NULL OR _email = '' THEN 
@@ -42,31 +43,31 @@ BEGIN
 
     INSERT INTO onboarding_responses (
         session_id,
-        firstname,
-        lastname,
+        first_name,
+        last_name,
         email,
         country_code,
         usage_plan,
         current_tools,
+        privacy_concern_level,
         ctime,
-        mtime,
-        privacy_concern_level
+        mtime
     )
     VALUES (
         _session_id,
-        _firstname,
-        _lastname,
+        _first_name,
+        _last_name,
         _email,
         _country_code,
-        JSON_OBJECT(),
-        JSON_OBJECT(),
+        'personal',
+        JSON_ARRAY(),
+        1,
         UNIX_TIMESTAMP(),
-        UNIX_TIMESTAMP(),
-        1
+        UNIX_TIMESTAMP()
     )
     ON DUPLICATE KEY UPDATE
-        firstname = VALUES(firstname),
-        lastname = VALUES(lastname),
+        first_name = VALUES(first_name),
+        last_name = VALUES(last_name),
         email = VALUES(email),
         country_code = VALUES(country_code),
         mtime = UNIX_TIMESTAMP();

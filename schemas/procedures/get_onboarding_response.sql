@@ -17,16 +17,13 @@ BEGIN
     SELECT
         id,
         session_id, 
-        firstname,
-        lastname,
+        first_name,
+        last_name,
         email,
         country_code, 
         usage_plan,
-        usage_plan plan,
         current_tools,
-        current_tools tools,
         privacy_concern_level,
-        privacy_concern_level privacy,
         ctime,
         mtime
     FROM onboarding_responses

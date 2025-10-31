@@ -9,8 +9,8 @@ CREATE PROCEDURE `mark_onboarding_complete`(
 )
 BEGIN
     -- Added semicolons
-    DECLARE v_firstname VARCHAR(128);
-    DECLARE v_lastname VARCHAR(128);
+    DECLARE v_first_name VARCHAR(128);
+    DECLARE v_last_name VARCHAR(128);
     DECLARE v_email VARCHAR(255);
     DECLARE v_country_code CHAR(2); 
     DECLARE v_usage_plan VARCHAR(20); 
@@ -30,15 +30,15 @@ BEGIN
 
     -- Get current values
     SELECT
-        firstname, lastname, email, country_code, 
+        first_name, last_name, email, country_code, 
         usage_plan, current_tools, JSON_LENGTH(current_tools), privacy_concern_level
     INTO
-        v_firstname, v_lastname, v_email, v_country_code, 
+        v_first_name, v_last_name, v_email, v_country_code, 
         v_usage_plan, v_current_tools, v_tools_count, v_privacy
     FROM onboarding_responses
     WHERE session_id = _session_id; 
     -- Validate: Check if user actually filled in data
-    IF v_firstname IS NULL OR v_lastname IS NULL OR v_email IS NULL OR v_country_code IS NULL THEN 
+    IF v_first_name IS NULL OR v_last_name IS NULL OR v_email IS NULL OR v_country_code IS NULL THEN 
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Step 1 is incomplete.';
     END IF;
     IF v_usage_plan IS NULL THEN
@@ -57,8 +57,8 @@ BEGIN
         session_id,
         TRUE as is_completed,
         'completed' as status,
-        firstname,
-        lastname,
+        first_name,
+        last_name,
         email,
         country_code,
         usage_plan,

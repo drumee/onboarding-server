@@ -6,7 +6,7 @@ DELIMITER $$
 
 CREATE PROCEDURE `save_onboarding_usage_plan`(
     IN _session_id VARCHAR(128) CHARACTER SET ascii,
-    IN _usage_plan JSON
+    IN _usage_plan ENUM('personal', 'team', 'storage', 'other')
 )
 BEGIN
     -- Validate inputs
