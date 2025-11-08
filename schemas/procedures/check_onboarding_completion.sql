@@ -9,8 +9,8 @@ CREATE PROCEDURE `check_onboarding_completion`(
 )
 BEGIN
     DECLARE v_exists BOOLEAN DEFAULT FALSE;
-    DECLARE v_usage_plan VARCHAR(20);
-    DECLARE v_tools_count INT DEFAULT 0;
+    DECLARE v_usage_plan JSON;
+    DECLARE v_tools_count JSON;
     DECLARE v_privacy INT;
     DECLARE v_completed BOOLEAN DEFAULT FALSE;
 
@@ -35,7 +35,7 @@ BEGIN
         -- Record exists - check completion
         SELECT
             usage_plan,
-            JSON_LENGTH(current_tools),
+            current_tools,
             privacy_concern_level
         INTO v_usage_plan, v_tools_count, v_privacy
         FROM onboarding_responses

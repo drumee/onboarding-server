@@ -36,9 +36,9 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid email format'; 
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM countries WHERE country_code = _country_code) THEN
-       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid country_code provided'; 
-    END IF;
+    -- IF NOT EXISTS (SELECT 1 FROM countries WHERE country_code = _country_code) THEN
+    --    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid country_code provided'; 
+    -- END IF;
 
     INSERT INTO onboarding_responses (
         session_id,

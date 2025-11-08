@@ -34,6 +34,21 @@ class Onboarding extends Entity {
   /**
    * 
    */
+  async save_signup_info() {
+    const sessionId = this.input.sid();
+    const email = this.input.need(Attr.email);
+
+    // Call SP
+    await this.db.await_proc(
+      `${this.app_db}.save_signup_info`,
+      sessionId, email
+    );
+    this.output.data({ success: true, message: 'User info saved.', data: {} });
+  }
+
+  /**
+   * 
+   */
   async save_user_info() {
     const sessionId = this.input.sid();
     const firstName = this.input.need(Attr.firstname);
@@ -52,7 +67,6 @@ class Onboarding extends Entity {
       `${this.app_db}.save_onboarding_user_info`,
       sessionId, firstName, lastName, email, countryCode
     );
-
     this.output.data({ success: true, message: 'User info saved.', data: {} });
   }
 
@@ -149,7 +163,7 @@ class Onboarding extends Entity {
     let completionStatusRaw;
 
     try {
-      completionStatusRaw = await this.db.await_proc('1_c1d86df0c1d86df7.check_onboarding_completion', sessionId);
+      completionStatusRaw = await this.db.await_proc(`${this.app_db}.check_onboarding_completion`, sessionId);
     } catch (spError) {
       console.error(`[ONBOARDING ERROR] Error calling check_completion SP for session ${sessionId}: ${spError.message}`);
       throw spError;

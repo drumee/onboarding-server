@@ -7,6 +7,13 @@
         "fast_check": "public-api" 
       }
     },
+    "save_signup_info": {
+      "scope": "hub",
+      "permission": { 
+        "src": "anonymous",
+        "fast_check": "public-api" 
+      }
+    },
     "save_usage_plan": {
       "scope": "hub",
       "permission": { 
