@@ -42,7 +42,6 @@ class Signup extends Entity {
       `${this.app_db}.save_signup_info`,
       sessionId, email
     );
-    this.debug("AAA:41", Attr.ok, status)
     const ulang = this.input.ua_language();
     let lex = Cache.lex(ulang)
     const { main_domain } = sysEnv();
@@ -80,7 +79,6 @@ class Signup extends Entity {
     const otp = this.input.need('otp');
     let sql = `SELECT email, otp FROM ${this.app_db}.signup_data WHERE session_id=? AND otp=?`
     let { email } = await this.db.await_query(sql, sessionId, otp) || {};
-    console.log("verify_otp:", otp, email);
     if (email) {
       this.output.data({ success: true, message: 'User info saved.', data: {} });
     } else {
