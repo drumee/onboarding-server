@@ -14,17 +14,24 @@ BEGIN
   ) INTO _otp;
 
   INSERT INTO signup_data (
+    ctime,
+    mtime,
     session_id,
     email,
     otp
   )
   VALUES (
+    UNIX_TIMESTAMP(),
+    UNIX_TIMESTAMP(),
     _session_id,
     _email,
     _otp
   )
   ON DUPLICATE KEY UPDATE
-    email = VALUES(email), session_id=VALUES(session_id), otp=VALUES(otp);
+    email = VALUES(email), 
+    session_id=VALUES(session_id), 
+    otp=VALUES(otp),
+    mtime = UNIX_TIMESTAMP();
   
   SELECT otp, email FROM signup_data WHERE session_id=_session_id;
 

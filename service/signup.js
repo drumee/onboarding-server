@@ -1,7 +1,7 @@
 // service/signup.js
 
 const { Entity } = require('@drumee/server-core');
-const { Cache, Attr, sysEnv, Messenger } = require('@drumee/server-essentials');
+const { Cache, Attr, sysEnv, Messenger, uniqueId } = require('@drumee/server-essentials');
 const { resolve } = require('path');
 
 class Signup extends Entity {
@@ -72,6 +72,54 @@ class Signup extends Entity {
   }
 
   /**
+   * The account schema is picked from the pool of hubs that are already created by offline process 
+   */
+  async _create_account(data) {
+    const { main_domain: domain } = sysEnv();
+    let {
+      email,
+      firstname,
+      lastname,
+      password,
+    } = data;
+    let username = firstname || email.split('@')[0];
+    username = await this.yp.await_func("ensure_username", { username: username.toLowerCase(), domain });
+    // username = username.replace(/[^a-zA-Z0-9]/g, '');
+    let profile = {
+      username,
+      sharebox: uniqueId(),
+      otp: 0,
+      category: "trial",
+      profile_type: "trial",
+      lang: this.user.language() || this.input.app_language(),
+      firstname,
+      lastname,
+      email
+    }
+
+    let user = await this.yp.await_proc("drumate_create", password, profile);
+    if (!user || !user[0]) {
+      return { ...profile, error: 1, status: "unknown_error" }
+    }
+
+    if (user[0].failed) {
+      return { ...profile, error: 1, status: "db_error", ...user[0] }
+    }
+    let { permission, failed } = user[0];
+    let { drumate } = user[2] || {};
+    if (drumate && permission) {
+      try {
+        await this.session.login({ ident: email, password }, 0);
+        return { error: 0, failed, status: "ok" }
+      } catch (e) {
+        this.warn("Auto login failed", e)
+        return { error: 1, failed, status: "internal_error" }
+      }
+    }
+    return { error: 1, failed, status: "unexpected_error" }
+  }
+
+  /**
    * 
    */
   async verify_otp() {
@@ -80,7 +128,12 @@ class Signup extends Entity {
     let sql = `SELECT email, otp FROM ${this.app_db}.signup_data WHERE session_id=? AND otp=?`
     let { email } = await this.db.await_query(sql, sessionId, otp) || {};
     if (email) {
-      this.output.data({ success: true, message: 'User info saved.', data: {} });
+      let data = await this.db.await_proc(`${this.app_db}.get_signup_info`, { email }) || {};
+      this.debug("AAA:132", data.user)
+      // if (data && data.user && data.user.email) {
+      //   await this._create_account(data.user)
+      // }
+      this.output.data(data);
     } else {
       this.output.data({ success: false, message: 'User info not saved.', data: {} });
     }
