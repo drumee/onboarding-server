@@ -3,8 +3,9 @@
 const { Entity } = require('@drumee/server-core');
 const { Cache, Attr, sysEnv, Messenger, uniqueId } = require('@drumee/server-essentials');
 const { resolve } = require('path');
+const Account = require("./lib/account")
 
-class Signup extends Entity {
+class Signup extends Account {
 
   initialize(opt) {
     super.initialize(opt);
@@ -19,12 +20,8 @@ class Signup extends Entity {
   async get_info() {
     const sessionId = this.input.sid();
     let sql = `SELECT email, otp FROM ${this.app_db}.signup_data WHERE session_id=?`
-    let { email, otp } = await this.db.await_query(sql, sessionId) || {};
-    if (otp) {
-      this.output.data({ email, otp: 0 });
-    } else {
-      this.output.data({ email, otp: 0 });
-    }
+    let { email } = await this.db.await_query(sql, sessionId) || {};
+    this.output.data({ email });
   }
 
   /**
@@ -71,53 +68,6 @@ class Signup extends Entity {
     this.output.data({ status: 'ok', sent, email });
   }
 
-  /**
-   * The account schema is picked from the pool of hubs that are already created by offline process 
-   */
-  async _create_account(data) {
-    const { main_domain: domain } = sysEnv();
-    let {
-      email,
-      firstname,
-      lastname,
-      password,
-    } = data;
-    let username = firstname || email.split('@')[0];
-    username = await this.yp.await_func("ensure_username", { username: username.toLowerCase(), domain });
-    // username = username.replace(/[^a-zA-Z0-9]/g, '');
-    let profile = {
-      username,
-      sharebox: uniqueId(),
-      otp: 0,
-      category: "trial",
-      profile_type: "trial",
-      lang: this.user.language() || this.input.app_language(),
-      firstname,
-      lastname,
-      email
-    }
-
-    let user = await this.yp.await_proc("drumate_create", password, profile);
-    if (!user || !user[0]) {
-      return { ...profile, error: 1, status: "unknown_error" }
-    }
-
-    if (user[0].failed) {
-      return { ...profile, error: 1, status: "db_error", ...user[0] }
-    }
-    let { permission, failed } = user[0];
-    let { drumate } = user[2] || {};
-    if (drumate && permission) {
-      try {
-        await this.session.login({ ident: email, password }, 0);
-        return { error: 0, failed, status: "ok" }
-      } catch (e) {
-        this.warn("Auto login failed", e)
-        return { error: 1, failed, status: "internal_error" }
-      }
-    }
-    return { error: 1, failed, status: "unexpected_error" }
-  }
 
   /**
    * 
@@ -129,16 +79,35 @@ class Signup extends Entity {
     let { email } = await this.db.await_query(sql, sessionId, otp) || {};
     if (email) {
       let data = await this.db.await_proc(`${this.app_db}.get_signup_info`, { email }) || {};
-      this.debug("AAA:132", data.user)
-      // if (data && data.user && data.user.email) {
-      //   await this._create_account(data.user)
-      // }
-      this.output.data(data);
+      this.output.data(data.user);
     } else {
       this.output.data({ success: false, message: 'User info not saved.', data: {} });
     }
   }
 
+  /**
+   * 
+   */
+  async create_account() {
+    const email = this.input.need(Attr.email);
+    const password = this.input.need(Attr.password);
+    let user = await this.yp.await_proc("drumate_exists", email);
+    if (user && user.email) {
+      return this.output.data({ status: "user_exists", email });
+    }
+    let data = await this.db.await_proc(`${this.app_db}.get_signup_info`, { email }) || {};
+    let args = { email, password };
+    if (data.user && data.user.email && data.firstname) {
+      args = { ...data.user, password }
+    }
+    let status = await super.create_account(args)
+    if(data.user && data.user.firstname){
+      status.completed=1
+    }else{
+      status.completed=0
+    }
+    this.output.data(status);
+  }
 }
 
 module.exports = Signup;

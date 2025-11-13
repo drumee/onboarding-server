@@ -1,8 +1,8 @@
 // service/onboarding.js
 
 const { Entity } = require('@drumee/server-core');
-const { toArray, Cache, Attr } = require('@drumee/server-essentials');
-
+const { toArray, Cache, Constants, Attr } = require('@drumee/server-essentials');
+const { ID_NOBODY } = Constants;
 class Onboarding extends Entity {
 
   initialize(opt) {
@@ -187,13 +187,30 @@ class Onboarding extends Entity {
     const sessionId = this.input.sid();
 
     try {
-      await this.db.await_proc('1_c1d86df0c1d86df7.mark_onboarding_complete', sessionId);
+      await this.db.await_proc(`${this.app_db}.mark_onboarding_complete`, sessionId);
     } catch (spError) {
       console.error(`[ONBOARDING ERROR] Error calling mark_complete SP for session ${sessionId}: ${spError.message}`);
-      throw spError; // Let API fail if validation in SP fails
+      throw spError;
     }
 
     this.output.data({ success: true, message: 'Onboarding marked as complete (validated).', data: {} });
+  }
+
+  /**
+   * 
+   */
+  async update_profile() {
+    const { email } = this.user.get(Attr.profile);
+    this.debug("AAA:204", this.user.get(Attr.profile))
+    if (!this.uid === ID_NOBODY) {
+      return this.output.data({ status: "no-user" });
+    }
+    const sql = `SELECT * FROM ${this.app_db}.onboarding_responses WHERE email=? ORDER BY mtime DESC LIMIT 1`;
+    const { firstname, lastname, country_code }
+      = await this.yp.await_query(sql, email) || {};
+    this.debug("AAA:210", { firstname, lastname, country_code, email })
+    this.yp.await_proc('drumate_update_profile', this.uid, { onboarded: 1, firstname, lastname, country_code })
+    this.output.data({ firstname, lastname, country_code });
   }
 
   /**
@@ -203,7 +220,7 @@ class Onboarding extends Entity {
   async get_response() {
     const sessionId = this.input.sid();
     let responseDataRaw;
-
+    let { xlink } = JSON.parse(this.conf);
     try {
       responseDataRaw = await this.db.await_proc(`${this.app_db}.get_onboarding_response`, sessionId);
     } catch (spError) {
@@ -214,7 +231,7 @@ class Onboarding extends Entity {
     let responseData = toArray(responseDataRaw)[0] || null;
 
     if (!responseData) {
-      this.output.data({ success: false, message: 'No onboarding data found.', data: null });
+      this.output.data({ xlink });
       return;
     }
 
@@ -227,8 +244,9 @@ class Onboarding extends Entity {
         responseData.current_tools = [];
       }
     }
-
-    this.output.data({ success: true, data: responseData });
+    this.conf = Cache.getSysConf('ob_conf');
+    responseData.xlink = xlink;
+    this.output.data(responseData);
   }
 }
 
