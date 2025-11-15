@@ -18,15 +18,16 @@
 const {
   sysEnv, uniqueId
 } = require("@drumee/server-essentials");
-const { Mfs } = require("@drumee/server-core");
+const { Entity } = require("@drumee/server-core");
 
 
-class Account extends Mfs {
+class Account extends Entity {
 
   /**
    * The account schema is picked from the pool of hubs that are already created by offline process 
    */
   async create_account(data) {
+    this.debug("AAA:30", data)
     const { main_domain: domain } = sysEnv();
     let {
       email,

@@ -69,21 +69,21 @@ class Signup extends Account {
   }
 
 
-  /**
-   * 
-   */
-  async verify_otp() {
-    const sessionId = this.input.sid();
-    const otp = this.input.need('otp');
-    let sql = `SELECT email, otp FROM ${this.app_db}.signup_data WHERE session_id=? AND otp=?`
-    let { email } = await this.db.await_query(sql, sessionId, otp) || {};
-    if (email) {
-      let data = await this.db.await_proc(`${this.app_db}.get_signup_info`, { email }) || {};
-      this.output.data(data.user);
-    } else {
-      this.output.data({ success: false, message: 'User info not saved.', data: {} });
-    }
-  }
+  // /**
+  //  * 
+  //  */
+  // async verify_otp() {
+  //   const sessionId = this.input.sid();
+  //   const otp = this.input.need('otp');
+  //   let sql = `SELECT email, otp FROM ${this.app_db}.signup_data WHERE session_id=? AND otp=?`
+  //   let { email } = await this.db.await_query(sql, sessionId, otp) || {};
+  //   if (email) {
+  //     let data = await this.db.await_proc(`${this.app_db}.get_signup_info`, { email }) || {};
+  //     this.output.data(data.user);
+  //   } else {
+  //     this.output.data({ success: false, message: 'User info not saved.', data: {} });
+  //   }
+  // }
 
   /**
    * 
@@ -100,13 +100,18 @@ class Signup extends Account {
     if (data.user && data.user.email && data.firstname) {
       args = { ...data.user, password }
     }
+    this.debug("AAA:103", args)
     let status = await super.create_account(args)
-    if(data.user && data.user.firstname){
-      status.completed=1
-    }else{
-      status.completed=0
+    this.debug("AAA:104", status)
+    let res = await this.session.signin({ username: email, email, password });
+    this.debug("AAA:107", res)
+    res.status = "ok";
+    if (res.user && res.user.firstname) {
+      status.completed = 1
+    } else {
+      status.completed = 0
     }
-    this.output.data(status);
+    this.output.data(res);
   }
 }
 
